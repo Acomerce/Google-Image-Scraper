@@ -28,7 +28,7 @@ import numpy as np
 import patch
 
 class GoogleImageScraper():
-    def __init__(self, webdriver_path, image_path, search_key, number_of_images, headless, output_size, keep_filenames, max_missed, token_name):
+    def __init__(self, webdriver_path, image_path, search_key, number_of_images, headless, output_size, keep_filenames, max_missed, token_name, face_crop):
         #check parameter types
         image_path = os.path.join(image_path, search_key)
         if (type(number_of_images)!=int):
@@ -72,6 +72,7 @@ class GoogleImageScraper():
         self.keep_filenames = keep_filenames
         self.max_missed = max_missed
         self.token_name = token_name
+        self.face_crop = face_crop
 
     def detect_faces(self, image):
       # Convert the image from PIL.Image format to a NumPy array
@@ -103,41 +104,48 @@ class GoogleImageScraper():
             new_height = self.output_size
 
         image = image.resize((new_width, new_height), Image.ANTIALIAS)
-        face_boxes = self.detect_faces(image)
 
-        if len(face_boxes) == 0:
-            raise Exception("Has no faces")
+        if self.face_crop: # If face_crop is True, crop the image to the face
+            face_boxes = self.detect_faces(image)
 
-        if len(face_boxes) > 1:
-            raise Exception("Has more than one face")
+            if len(face_boxes) == 0:
+                raise Exception("Has no faces")
 
-        face_box = face_boxes[0]
-        center_x = face_box[0] + face_box[2] / 2
-        center_y = face_box[1] + face_box[3] / 2
-        top = center_y - self.output_size / 2
-        left = center_x - self.output_size / 2
-        bottom = center_y + self.output_size / 2
-        right = center_x + self.output_size / 2
+            if len(face_boxes) > 1:
+                raise Exception("Has more than one face")
 
-        # Adjust top and left values to ensure they do not go outside the bounds of the original image
-        if top < 0:
-            bottom = bottom + abs(top)
-            top = 0
-        if left < 0:
-            right = right + abs(left)
-            left = 0
+            face_box = face_boxes[0]
+            center_x = face_box[0] + face_box[2] / 2
+            center_y = face_box[1] + face_box[3] / 2
+            top = center_y - self.output_size / 2
+            left = center_x - self.output_size / 2
+            bottom = center_y + self.output_size / 2
+            right = center_x + self.output_size / 2
 
-        # Adjust bottom and right values to ensure they do not go outside the bounds of the original image
-        if bottom > new_height:
-            rest = bottom - new_height
-            top = top - rest
-            bottom = new_height
-        if right > new_width:
-            rest = right - new_width
-            left = left - rest
-            right = new_width
+            # Adjust top and left values to ensure they do not go outside the bounds of the original image
+            if top < 0:
+                bottom = bottom + abs(top)
+                top = 0
+            if left < 0:
+                right = right + abs(left)
+                left = 0
 
-        image = image.crop((left, top, right, bottom))
+            # Adjust bottom and right values to ensure they do not go outside the bounds of the original image
+            if bottom > new_height:
+                rest = bottom - new_height
+                top = top - rest
+                bottom = new_height
+            if right > new_width:
+                rest = right - new_width
+                left = left - rest
+                right = new_width
+
+            image = image.crop((left, top, right, bottom))
+
+        # # Skip if image has not a transparent background
+        # if image.mode != "RGBA":
+        #     raise Exception("Has no transparent background")
+
         image.save(path)
 
     def process_url(self, image_url, count):

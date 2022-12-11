@@ -14,7 +14,17 @@ import argparse
 
 def worker_thread():
     image_scraper = GoogleImageScraper(
-        webdriver_path, image_path, search_key, number_of_images, headless, output_size, keep_filenames, max_missed, token_name)
+        webdriver_path,
+        image_path,
+        search_key,
+        number_of_images,
+        headless,
+        output_size,
+        keep_filenames,
+        max_missed,
+        token_name,
+        face_crop
+    )
     image_scraper.scrape()
 
     #Release resources
@@ -24,12 +34,13 @@ if __name__ == "__main__":
     # Define the command line arguments that the program should accept
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--search-key', help='the search key to use for scraping images', required=True)
-    parser.add_argument('-n', '--number-of-images', type=int, help='the number of images to scrape', default=20)
+    parser.add_argument('-n', '--number-of-images', type=int, help='the number of images to scrape', default=10)
     parser.add_argument('-H', '--headless', action='store_true', help='run the program in headless mode', default=True)
     parser.add_argument('-o', '--output-size', type=int, help='the desired image resolution', default=512)
     parser.add_argument('-m', '--max-missed', type=int, help='the maximum number of failed images before exiting', default=10)
-    parser.add_argument('-k', '--keep-filenames', action='store_true', help='keep the original filenames of the images', default=False)
+    parser.add_argument('-k', '--keep-filenames', action='store_true', help='keep the original filenames of the images', default=True)
     parser.add_argument('-t', '--token_name', help='the filename to use when storing the files. I.e. tokenname "jwa" will store files "jwa (1).jpg", "jwa (2).jpg" and so on. this has no effect if --keep-filenames is True', default=None)
+    parser.add_argument('-f', '--face-crop', help='crop the image to the face', default=False)
     
     # Parse the command line arguments
     args = parser.parse_args()
@@ -45,6 +56,7 @@ if __name__ == "__main__":
     output_size = args.output_size
     max_missed = args.max_missed
     keep_filenames = args.keep_filenames
+    face_crop = args.face_crop
 
     # If the token_name argument is not provided, set it to the same value as the search_key argument
     if args.token_name is None:
